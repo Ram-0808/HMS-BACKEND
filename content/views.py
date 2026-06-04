@@ -46,7 +46,13 @@ class GalleryImageViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = GalleryImageSerializer
-    queryset = GalleryImage.objects.filter(is_active=True)
+
+    def get_queryset(self):
+        if self.action in ('list', 'retrieve'):
+            # Public endpoints: only show active images
+            return GalleryImage.objects.filter(is_active=True)
+        # Admin endpoints (create/update/delete): allow access to ALL images
+        return GalleryImage.objects.all()
 
     def get_permissions(self):
         if self.action in ('list', 'retrieve'):
