@@ -122,6 +122,7 @@ STORAGES = {
     },
 }
 
+# Media files are now stored in the database (StoredImage model)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

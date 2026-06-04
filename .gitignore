@@ -17,13 +17,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyc
+*.pyo
+*.pyd
+*.cpython-*
 .Python
-env/
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
-docs/
 
 # Django
 *.log
@@ -41,21 +44,3 @@ media/
 # OS
 .DS_Store
 Thumbs.db
-
-# Celery runtime files
-celerybeat-schedule*
-celerybeat.pid
-
-# Test scripts and temporary files
-test_celery.py
-test_celery_worker.py
-test_tasks_minimal.py
-test_tasks_simple.py
-create_test_data.py
-one_test_script.py
-quick_test.py
-send_test_email.py
-step_by_step_test.py
-CELERY_TESTING_GUIDE.md
-TESTING_SUMMARY.md
-hospital/__pycache__/settings.cpython-313.pyc

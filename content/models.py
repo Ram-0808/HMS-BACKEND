@@ -1,4 +1,21 @@
+import uuid
 from django.db import models
+
+
+class StoredImage(models.Model):
+    """Stores image binary data in the database."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    data = models.BinaryField(verbose_name="Image binary data")
+    content_type = models.CharField(max_length=100, default='image/jpeg')
+    filename = models.CharField(max_length=255, blank=True, default='')
+    size = models.PositiveIntegerField(help_text="File size in bytes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'stored_images'
+
+    def __str__(self):
+        return f"{self.filename or str(self.id)} ({self.size} bytes)"
 
 
 class SiteSetting(models.Model):
@@ -8,8 +25,11 @@ class SiteSetting(models.Model):
     """
 
     # Images
-    hospital_image = models.ImageField(
-        upload_to='site/', blank=True, null=True,
+    hospital_image = models.ForeignKey(
+        StoredImage,
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        related_name='site_settings',
         help_text="Hospital building photo for the About Us page"
     )
 
@@ -63,7 +83,11 @@ class SiteSetting(models.Model):
 class GalleryImage(models.Model):
     """Gallery images for the Services page carousel."""
 
-    image = models.ImageField(upload_to='gallery/')
+    image = models.ForeignKey(
+        StoredImage,
+        on_delete=models.CASCADE,
+        related_name='gallery_images',
+    )
     caption = models.CharField(max_length=200, blank=True, default='')
     order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
     is_active = models.BooleanField(default=True)

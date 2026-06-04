@@ -7,7 +7,12 @@ class Doctor(models.Model):
     name = models.CharField(max_length=200)
     specialty = models.CharField(max_length=200)
     qualification = models.CharField(max_length=300)
-    photo = models.ImageField(upload_to='doctors/', blank=True, null=True)
+    photo = models.ForeignKey(
+        'content.StoredImage',
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        related_name='doctor_photos',
+    )
     bio = models.TextField(blank=True, default='')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
