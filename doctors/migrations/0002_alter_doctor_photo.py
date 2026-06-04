@@ -4,6 +4,12 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def clean_old_photo_field(apps, schema_editor):
+    """Set empty string photo fields to NULL before converting to FK."""
+    Doctor = apps.get_model('doctors', 'Doctor')
+    Doctor.objects.all().update(photo=None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,6 +18,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Clean old photo data before field type conversion
+        migrations.RunPython(clean_old_photo_field, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='doctor',
             name='photo',

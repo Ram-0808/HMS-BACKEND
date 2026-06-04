@@ -5,6 +5,16 @@ import uuid
 from django.db import migrations, models
 
 
+def clean_old_image_fields(apps, schema_editor):
+    """Set empty string image fields to NULL before converting to FK."""
+    GalleryImage = apps.get_model('content', 'GalleryImage')
+    SiteSetting = apps.get_model('content', 'SiteSetting')
+
+    # Empty strings can't be converted to UUID, so delete rows or set NULL
+    GalleryImage.objects.all().delete()
+    SiteSetting.objects.all().update(hospital_image=None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -26,6 +36,8 @@ class Migration(migrations.Migration):
                 'db_table': 'stored_images',
             },
         ),
+        # Clean old image data before field type conversion
+        migrations.RunPython(clean_old_image_fields, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='galleryimage',
             name='image',
