@@ -58,3 +58,4 @@ send_test_email.py
 step_by_step_test.py
 CELERY_TESTING_GUIDE.md
 TESTING_SUMMARY.md
+hospital/__pycache__/settings.cpython-313.pyc
