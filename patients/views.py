@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -62,6 +62,8 @@ def dashboard_stats(request):
     GET /api/dashboard/stats/
     Returns summary numbers for the admin dashboard.
     """
+    from doctors.models import Doctor
+
     today = timezone.now().date()
     all_patients = Patient.objects.all()
     today_qs = all_patients.filter(created_at__date=today)
@@ -72,8 +74,89 @@ def dashboard_stats(request):
     stats = {
         'total_patients': all_patients.count(),
         'today_patients': today_qs.count(),
+        'total_doctors': Doctor.objects.count(),
         'total_revenue': total_revenue,
         'today_revenue': today_revenue,
     }
     serializer = DashboardStatsSerializer(stats)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_charts(request):
+    """
+    GET /api/dashboard/charts/
+    Returns data for dashboard charts — last 7 days revenue and patient gender split.
+    """
+    from django.db.models.functions import TruncDate
+    from doctors.models import Doctor
+    from datetime import timedelta
+
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=6)
+
+    # Revenue per day — last 7 days (from patients table)
+    daily_revenue = (
+        Patient.objects
+        .filter(created_at__date__gte=week_ago, created_at__date__lte=today)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(revenue=Sum('fee_amount'))
+        .order_by('date')
+    )
+
+    # Patient visits per day — last 7 days
+    daily_visits = (
+        Patient.objects
+        .filter(created_at__date__gte=week_ago, created_at__date__lte=today)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(count=Sum('visit_count'))
+        .order_by('date')
+    )
+
+    # Gender distribution
+    gender_dist = list(
+        Patient.objects
+        .values('gender')
+        .annotate(count=Count('id'))
+    )
+    gender_map = {g['gender']: g['count'] for g in gender_dist}
+
+    # Payment method distribution
+    payment_dist = list(
+        Patient.objects
+        .values('payment_method')
+        .annotate(count=Count('id'))
+    )
+
+    # Doctor count by specialty (active doctors)
+    doctor_specialties = list(
+        Doctor.objects.filter(is_active=True)
+        .values('specialty')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:5]
+    )
+
+    return Response({
+        'daily_revenue': [
+            {'date': str(r['date']), 'revenue': float(r['revenue'] or 0)}
+            for r in daily_revenue
+        ],
+        'daily_visits': [
+            {'date': str(v['date']), 'visits': v['count']}
+            for v in daily_visits
+        ],
+        'gender_dist': {
+            'male': gender_map.get('M', 0),
+            'female': gender_map.get('F', 0),
+            'other': gender_map.get('O', 0),
+        },
+        'payment_dist': [
+            {'method': p['payment_method'], 'count': p['count']}
+            for p in payment_dist
+        ],
+        'top_specialties': doctor_specialties,
+        'total_doctors': Doctor.objects.filter(is_active=True).count(),
+    })

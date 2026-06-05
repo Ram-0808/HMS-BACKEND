@@ -16,6 +16,7 @@ from .serializers import (
     VendorSerializer,
     MedicineBatchListSerializer,
     MedicineBatchDetailSerializer,
+    MedicineBatchCreateSerializer,
     SaleListSerializer,
     SaleCreateSerializer,
     PharmacyDashboardStatsSerializer,
@@ -88,6 +89,8 @@ class MedicineBatchViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return MedicineBatchListSerializer
+        if self.action == 'create':
+            return MedicineBatchCreateSerializer
         return MedicineBatchDetailSerializer
 
     def get_queryset(self):
@@ -121,11 +124,9 @@ class MedicineBatchViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        qty_purchased = serializer.validated_data['quantity_purchased']
-        serializer.save(
-            created_by=self.request.user,
-            quantity_remaining=qty_purchased,
-        )
+        # created_by is set inside MedicineBatchCreateSerializer.create()
+        # quantity_remaining is also set there from quantity_purchased
+        serializer.save()
 
 
 class SaleViewSet(viewsets.ModelViewSet):

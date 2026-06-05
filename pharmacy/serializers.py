@@ -57,6 +57,30 @@ class VendorSerializer(serializers.ModelSerializer):
 # MedicineBatch Serializers
 # -------------------------------------------------------
 
+class MedicineBatchCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicineBatch
+        fields = [
+            'id', 'medicine', 'vendor', 'batch_number',
+            'quantity_purchased', 'cost_price', 'selling_price',
+            'manufacture_date', 'expiry_date', 'purchase_date',
+        ]
+
+    def validate_vendor(self, value):
+        # Convert empty string to None for optional FK
+        if value == '' or value is None:
+            return None
+        return value
+
+    def create(self, validated_data):
+        validated_data['quantity_remaining'] = validated_data['quantity_purchased']
+        # created_by is passed from viewset's perform_create via context
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['created_by'] = request.user
+        return MedicineBatch.objects.create(**validated_data)
+
+
 class MedicineBatchListSerializer(serializers.ModelSerializer):
     medicine_name = serializers.CharField(source='medicine.name', read_only=True)
     vendor_name = serializers.CharField(source='vendor.name', read_only=True, default=None)
@@ -113,26 +137,24 @@ class SaleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
-            'id', 'medicine', 'batch', 'patient',
+            'id', 'batch', 'patient',
             'quantity', 'unit_price', 'total_amount',
             'sale_date',
         ]
-        read_only_fields = ['sale_date']
+        read_only_fields = ['sale_date', 'total_amount']
 
     def validate(self, data):
         batch = data['batch']
         quantity = data['quantity']
         unit_price = data['unit_price']
 
-        if batch.medicine_id != data['medicine'].id:
-            raise serializers.ValidationError(
-                {'batch': 'Selected batch does not belong to the selected medicine.'}
-            )
-
         if quantity > batch.quantity_remaining:
             raise serializers.ValidationError(
                 {'quantity': f'Only {batch.quantity_remaining} units available in this batch.'}
             )
+
+        data['total_amount'] = quantity * unit_price
+        return data
 
         data['total_amount'] = quantity * unit_price
         return data

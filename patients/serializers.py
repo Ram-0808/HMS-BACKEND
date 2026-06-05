@@ -48,5 +48,6 @@ class DashboardStatsSerializer(serializers.Serializer):
     """Serializer for admin dashboard statistics."""
     total_patients = serializers.IntegerField()
     today_patients = serializers.IntegerField()
+    total_doctors = serializers.IntegerField()
     total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
     today_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
