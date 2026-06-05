@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/', include('patients.urls')),
     path('api/', include('doctors.urls')),
     path('api/', include('content.urls')),
+    path('api/', include('pharmacy.urls')),
 ]
 
 # Serve media files during development (fallback for any legacy files)
