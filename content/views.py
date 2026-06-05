@@ -22,19 +22,19 @@ class SiteSettingDetailView(APIView):
 
     def get(self, request):
         settings = SiteSetting.get_settings()
-        serializer = SiteSettingSerializer(settings)
+        serializer = SiteSettingSerializer(settings, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request):
         settings = SiteSetting.get_settings()
-        serializer = SiteSettingSerializer(settings, data=request.data)
+        serializer = SiteSettingSerializer(settings, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
     def patch(self, request):
         settings = SiteSetting.get_settings()
-        serializer = SiteSettingSerializer(settings, data=request.data, partial=True)
+        serializer = SiteSettingSerializer(settings, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
