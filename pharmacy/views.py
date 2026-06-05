@@ -35,12 +35,12 @@ class MedicineViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Medicine.objects.annotate(
-            total_stock=Sum(
+            annotated_total_stock=Sum(
                 'batches__quantity_remaining',
                 filter=Q(batches__quantity_remaining__gt=0)
             ),
         ).annotate(
-            is_low_stock=Q(total_stock__lte=F('reorder_level')),
+            annotated_is_low_stock=Q(annotated_total_stock__lte=F('reorder_level')),
         )
 
         search = self.request.query_params.get('search')
@@ -55,9 +55,9 @@ class MedicineViewSet(viewsets.ModelViewSet):
 
         stock_filter = self.request.query_params.get('stock')
         if stock_filter == 'low':
-            queryset = queryset.filter(total_stock__lte=F('reorder_level'))
+            queryset = queryset.filter(annotated_total_stock__lte=F('reorder_level'))
         elif stock_filter == 'out':
-            queryset = queryset.filter(Q(total_stock=0) | Q(total_stock__isnull=True))
+            queryset = queryset.filter(Q(annotated_total_stock=0) | Q(annotated_total_stock__isnull=True))
 
         return queryset
 
@@ -185,7 +185,7 @@ def pharmacy_dashboard_stats(request):
     today = timezone.now().date()
 
     all_medicines = Medicine.objects.annotate(
-        total_stock=Sum(
+        annotated_total_stock=Sum(
             'batches__quantity_remaining',
             filter=Q(batches__quantity_remaining__gt=0)
         )
@@ -193,10 +193,10 @@ def pharmacy_dashboard_stats(request):
 
     total_medicines = Medicine.objects.filter(is_active=True).count()
     low_stock_count = all_medicines.filter(
-        total_stock__lte=F('reorder_level'), is_active=True,
+        annotated_total_stock__lte=F('reorder_level'), is_active=True,
     ).count()
     out_of_stock_count = all_medicines.filter(
-        Q(total_stock=0) | Q(total_stock__isnull=True), is_active=True,
+        Q(annotated_total_stock=0) | Q(annotated_total_stock__isnull=True), is_active=True,
     ).count()
     expiring_soon_count = MedicineBatch.objects.filter(
         expiry_date__gte=today,

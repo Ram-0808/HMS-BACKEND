@@ -9,15 +9,15 @@ from .models import Medicine, Vendor, MedicineBatch, Sale
 class MedicineListSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     unit_type_display = serializers.CharField(source='get_unit_type_display', read_only=True)
-    total_stock = serializers.IntegerField(read_only=True, default=0)
-    is_low_stock = serializers.BooleanField(read_only=True, default=False)
+    stock_quantity = serializers.IntegerField(source='annotated_total_stock', read_only=True, default=0)
+    is_low_stock = serializers.BooleanField(source='annotated_is_low_stock', read_only=True, default=False)
 
     class Meta:
         model = Medicine
         fields = [
             'id', 'name', 'generic_name', 'category', 'category_display',
             'unit_type', 'unit_type_display', 'selling_price',
-            'reorder_level', 'total_stock', 'is_low_stock',
+            'reorder_level', 'stock_quantity', 'is_low_stock',
             'is_active', 'created_at',
         ]
 
@@ -25,15 +25,15 @@ class MedicineListSerializer(serializers.ModelSerializer):
 class MedicineDetailSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     unit_type_display = serializers.CharField(source='get_unit_type_display', read_only=True)
-    total_stock = serializers.IntegerField(read_only=True, default=0)
-    is_low_stock = serializers.BooleanField(read_only=True, default=False)
+    stock_quantity = serializers.IntegerField(source='annotated_total_stock', read_only=True, default=0)
+    is_low_stock = serializers.BooleanField(source='annotated_is_low_stock', read_only=True, default=False)
 
     class Meta:
         model = Medicine
         fields = [
             'id', 'name', 'generic_name', 'category', 'category_display',
             'manufacturer', 'description', 'unit_type', 'unit_type_display',
-            'selling_price', 'reorder_level', 'total_stock', 'is_low_stock',
+            'selling_price', 'reorder_level', 'stock_quantity', 'is_low_stock',
             'is_active', 'created_at',
         ]
         read_only_fields = ['created_at']
