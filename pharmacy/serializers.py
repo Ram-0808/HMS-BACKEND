@@ -153,9 +153,8 @@ class SaleCreateSerializer(serializers.ModelSerializer):
                 {'quantity': f'Only {batch.quantity_remaining} units available in this batch.'}
             )
 
-        data['total_amount'] = quantity * unit_price
-        return data
-
+        # Auto-set medicine from the batch
+        data['medicine'] = batch.medicine
         data['total_amount'] = quantity * unit_price
         return data
 
