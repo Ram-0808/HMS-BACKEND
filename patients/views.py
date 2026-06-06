@@ -63,20 +63,27 @@ def dashboard_stats(request):
     Returns summary numbers for the admin dashboard.
     """
     from doctors.models import Doctor
+    from pharmacy.models import Sale
 
     today = timezone.now().date()
     all_patients = Patient.objects.all()
     today_qs = all_patients.filter(created_at__date=today)
 
-    total_revenue = all_patients.aggregate(total=Sum('fee_amount'))['total'] or 0
-    today_revenue = today_qs.aggregate(total=Sum('fee_amount'))['total'] or 0
+    patient_revenue = all_patients.aggregate(total=Sum('fee_amount'))['total'] or 0
+    patient_today_revenue = today_qs.aggregate(total=Sum('fee_amount'))['total'] or 0
+
+    # Include pharmacy sales revenue
+    pharmacy_revenue = Sale.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    pharmacy_today_revenue = Sale.objects.filter(
+        sale_date__date=today
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
 
     stats = {
         'total_patients': all_patients.count(),
         'today_patients': today_qs.count(),
         'total_doctors': Doctor.objects.count(),
-        'total_revenue': total_revenue,
-        'today_revenue': today_revenue,
+        'total_revenue': patient_revenue + pharmacy_revenue,
+        'today_revenue': patient_today_revenue + pharmacy_today_revenue,
     }
     serializer = DashboardStatsSerializer(stats)
     return Response(serializer.data)
@@ -91,13 +98,14 @@ def dashboard_charts(request):
     """
     from django.db.models.functions import TruncDate
     from doctors.models import Doctor
+    from pharmacy.models import Sale
     from datetime import timedelta
 
     today = timezone.now().date()
     week_ago = today - timedelta(days=6)
 
     # Revenue per day — last 7 days (from patients table)
-    daily_revenue = (
+    patient_daily = (
         Patient.objects
         .filter(created_at__date__gte=week_ago, created_at__date__lte=today)
         .annotate(date=TruncDate('created_at'))
@@ -105,6 +113,26 @@ def dashboard_charts(request):
         .annotate(revenue=Sum('fee_amount'))
         .order_by('date')
     )
+
+    # Pharmacy sales revenue per day
+    pharmacy_daily = (
+        Sale.objects
+        .filter(sale_date__date__gte=week_ago, sale_date__date__lte=today)
+        .annotate(date=TruncDate('sale_date'))
+        .values('date')
+        .annotate(revenue=Sum('total_amount'))
+        .order_by('date')
+    )
+
+    # Merge patient + pharmacy revenue by date
+    revenue_map = {}
+    for r in patient_daily:
+        revenue_map[str(r['date'])] = float(r['revenue'] or 0)
+    for r in pharmacy_daily:
+        key = str(r['date'])
+        revenue_map[key] = revenue_map.get(key, 0) + float(r['revenue'] or 0)
+
+    daily_revenue = [{'date': k, 'revenue': v} for k, v in sorted(revenue_map.items())]
 
     # Patient visits per day — last 7 days
     daily_visits = (
@@ -140,10 +168,7 @@ def dashboard_charts(request):
     )
 
     return Response({
-        'daily_revenue': [
-            {'date': str(r['date']), 'revenue': float(r['revenue'] or 0)}
-            for r in daily_revenue
-        ],
+        'daily_revenue': daily_revenue,
         'daily_visits': [
             {'date': str(v['date']), 'visits': v['count']}
             for v in daily_visits
