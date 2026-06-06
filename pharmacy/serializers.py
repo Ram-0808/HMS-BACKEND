@@ -159,6 +159,27 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         return data
 
 
+class SaleDetailSerializer(serializers.ModelSerializer):
+    """Full sale detail for receipt/invoice generation."""
+    medicine_name = serializers.CharField(source='medicine.name', read_only=True)
+    medicine_category = serializers.CharField(source='medicine.get_category_display', read_only=True)
+    medicine_unit_type = serializers.CharField(source='medicine.get_unit_type_display', read_only=True)
+    batch_number = serializers.CharField(source='batch.batch_number', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True, default=None)
+    patient_phone = serializers.CharField(source='patient.phone', read_only=True, default=None)
+    sold_by_name = serializers.CharField(source='sold_by.username', read_only=True, default=None)
+
+    class Meta:
+        model = Sale
+        fields = [
+            'id', 'medicine', 'medicine_name', 'medicine_category',
+            'medicine_unit_type', 'batch', 'batch_number',
+            'patient', 'patient_name', 'patient_phone',
+            'quantity', 'unit_price', 'total_amount',
+            'sale_date', 'sold_by', 'sold_by_name',
+        ]
+
+
 # -------------------------------------------------------
 # Pharmacy Dashboard Stats Serializer
 # -------------------------------------------------------

@@ -19,6 +19,7 @@ from .serializers import (
     MedicineBatchCreateSerializer,
     SaleListSerializer,
     SaleCreateSerializer,
+    SaleDetailSerializer,
     PharmacyDashboardStatsSerializer,
 )
 from .permissions import IsStaffUser
@@ -137,6 +138,8 @@ class SaleViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return SaleListSerializer
+        if self.action == 'retrieve':
+            return SaleDetailSerializer
         return SaleCreateSerializer
 
     def get_queryset(self):
