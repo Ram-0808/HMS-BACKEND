@@ -179,7 +179,7 @@ class SaleViewSet(viewsets.ModelViewSet):
             batch.quantity_remaining -= quantity
             batch.save(update_fields=['quantity_remaining'])
 
-            serializer.save(sold_by=self.request.user)
+            serializer.save(sold_by=self.request.user, medicine=batch.medicine)
 
 
 @api_view(['GET'])

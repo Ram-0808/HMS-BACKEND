@@ -137,11 +137,11 @@ class SaleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
-            'id', 'batch', 'patient',
+            'id', 'medicine', 'batch', 'patient',
             'quantity', 'unit_price', 'total_amount',
             'sale_date',
         ]
-        read_only_fields = ['sale_date', 'total_amount']
+        read_only_fields = ['sale_date', 'total_amount', 'medicine']
 
     def validate(self, data):
         batch = data['batch']
@@ -153,8 +153,6 @@ class SaleCreateSerializer(serializers.ModelSerializer):
                 {'quantity': f'Only {batch.quantity_remaining} units available in this batch.'}
             )
 
-        # Auto-set medicine from the batch
-        data['medicine'] = batch.medicine
         data['total_amount'] = quantity * unit_price
         return data
 
